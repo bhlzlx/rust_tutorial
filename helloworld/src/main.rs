@@ -1,19 +1,14 @@
-use std::vec::*;
-use std::boxed::*;
 
-struct SparseColumn {
-    lineCount: i32,
-    ptr: *mut i8,
+fn trace_msg( msg: &str )->i32 {
+    return 0
 }
 
-fn main() {
-    let mut buf: Vec<i8> = Vec::new();
-    buf.resize(1024, 0);
-    let rawPtr = buf.as_ptr();
 
-    unsafe {
-        let mut col :*mut SparseColumn = rawPtr as * mut SparseColumn; 
-        (*col).lineCount = 0;
-    }
+fn main() {
+    let ages:[i8; 8] = [1,2,3,4,5,6,7,8];
+
+    let mut msg : String = String::from("hello,world!");
+    let msg_ref = &msg;
+    msg.push('a');
     
 }
