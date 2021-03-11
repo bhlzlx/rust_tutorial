@@ -1,14 +1,13 @@
+extern crate gx;
 
-fn trace_msg( msg: &str )->i32 {
-    return 0
+use gx::excel::hello_excel;
+
+struct Point<T> {
+    x: T,
+    y: T
 }
 
-
-fn main() {
-    let ages:[i8; 8] = [1,2,3,4,5,6,7,8];
-
-    let mut msg : String = String::from("hello,world!");
-    let msg_ref = &msg;
-    msg.push('a');
-    
+fn main(){
+    gx::excel::hello_excel();
+    gx::excel::core::hello_core();
 }
