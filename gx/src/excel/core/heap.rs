@@ -1,43 +1,40 @@
 use std::alloc::*;
 
-pub struct HeapPage<'a> {
+pub struct HeapPage {
     ptr: *mut u8,   // 内存指针
-    position: u32,  // 分配位置
-    capacity: u32,
-    full_slice:&'a mut [u8],
+    position: usize,  // 分配位置
+    capacity: usize,
 }
 
-impl HeapPage<'_> {
-    pub fn new(capacity: u32)->HeapPage<'static> {
+impl HeapPage {
+
+    pub fn new( capacity: usize)->HeapPage {
         let mut ptr = std::ptr::null_mut();
         unsafe {
             let memlayout = Layout::from_size_align_unchecked(capacity as usize, 16);
             ptr = alloc(memlayout);
-        
             let page: HeapPage = HeapPage {
                 ptr: ptr,
                 position: 0,
                 capacity: capacity,
-                full_slice: std::slice::from_raw_parts_mut(ptr, capacity as usize)
             };
             return page;
         }
     }
 
-    pub fn alloc(&mut self, size: u32)->Option<&mut[u8]> {
+    pub fn alloc(&mut self, size: usize)->*mut u8 {
         if (self.capacity - self.position) >= size {
-            let begin = self.position as usize;
-            let end = begin + size as usize;
-            let rst = &mut self.full_slice[begin..end];
+            let address = self.ptr as usize + self.position;
+            let rst = address as *mut u8;
             self.position += size;
-            return Some(rst);
+            return rst;
         } else {
-            return None;
+            return std::ptr::null_mut();
         }
     }
 }
 
-impl Drop for HeapPage<'_> {
+impl Drop for HeapPage {
     fn drop(&mut self) {
         unsafe {
             let layout = Layout::from_size_align_unchecked(self.capacity as usize, 16);
@@ -45,15 +42,15 @@ impl Drop for HeapPage<'_> {
         }
     }
 }
-
+/*
 pub struct Heap {
-    page_capacity: u32,
+    page_capacity: usize,
     initial_page: HeapPage,
     current_page: NonNull<&mut HeapPage>,
 }
 
 impl Heap {
-    fn new(page_capacity: u32)->Heap {
+    fn new(page_capacity: usize)->Heap {
         // let heap_page = HeapPage::new(page_capacity);
         let heap: Heap;
         Heap {
@@ -63,4 +60,4 @@ impl Heap {
         };
         return heap;
     }
-}
+}*/
