@@ -1,83 +1,77 @@
 use std::alloc::*;
 
-pub struct HeapPage {
-    capacity: usize,
+struct HeapPage {
+    prev: *mut HeapPage,
     position: usize,
-    prev:*mut HeapPage,
+    capacity: usize,
 }
 
 impl HeapPage {
 
-    pub fn new_ptr(capacity: usize)->*mut HeapPage {
-        unsafe {
-            let full_size = capacity + std::mem::size_of::<HeapPage>();
-            let layout = std::alloc::Layout::from_size_align_unchecked(full_size, std::mem::size_of::<usize>());
-            let memptr = std::alloc::alloc(layout);
-            let heap_page:*mut HeapPage = memptr as *mut HeapPage; 
-            {
-                let heap_page_ref:&mut HeapPage = &mut (*heap_page);
-                heap_page_ref.capacity = capacity;
-                heap_page_ref.position = 0;
-                heap_page_ref.prev = std::ptr::null_mut();
-            }
-            return heap_page;
-        }
+    fn address(&self)->*mut u8 {
+        let page_ptr = self as *const HeapPage;
+        let addr:*mut u8 = (page_ptr as usize + self.position) as *mut u8;
+        return addr;
     }
 
-    pub fn buffer_address(&self)->usize {
-        let ptr = self as *const HeapPage;
-        let address = ptr as usize;
-        return address + std::mem::size_of::<HeapPage>();
-    }
-
-    pub fn allocate( &mut self, size: usize)->*mut u8 {
-        if self.capacity - self.position >= size {
-            let address = self.buffer_address();
-            let rst = (address + self.position) as *mut u8;
+    fn allocate(&mut self, size: usize)->*mut u8 {
+        if self.capacity - self.position < size {
+            return std::ptr::null_mut();
+        } else {
+            let rst = self.address();
             self.position += size;
             return rst;
-        } else {
-            return std::ptr::null_mut();
         }
     }
+
 }
 
 pub struct Heap {
-    current_page: *mut HeapPage,
-    bytes_allcated: usize,
-    bytes_heap_page: usize
+    page: *mut HeapPage,
+    page_count: usize,
+    page_size:usize,
+    bytes_allocated: usize,
+    bytes_total: usize,
 }
 
 impl Heap {
-                
-    pub fn new(page_size: usize)->Heap {
-        let page_ptr = HeapPage::new_ptr(page_size);
-        let heap:Heap = Heap {
-            current_page: page_ptr,
-            bytes_allcated: 0,
-            bytes_heap_page: page_size,
-        };
-        return heap;
-    }
-                
-    pub fn allocate(&mut self, size: usize)-> *mut u8 {
+
+    fn create_page(size:usize, prev: *mut HeapPage)->*mut HeapPage {
         unsafe {
-            let current_page_ref = &mut *self.current_page;
-            let mut rst = current_page_ref.allocate(size);
+            let layout = std::alloc::Layout::from_size_align_unchecked(size + std::mem::size_of::<HeapPage>(),16);
+            let ptr = std::alloc::alloc(layout);
+            let page = ptr as *mut HeapPage;
+            let page_ref = &mut *page;
+            page_ref.prev = prev;
+            page_ref.position = 0;
+            page_ref.capacity = size;
+            return page;
+        }
+    }
+
+    pub fn create_heap(page_size:usize)->Heap {
+        let rst = Heap {
+            page: Heap::create_page(page_size, std::ptr::null_mut()),
+            page_count:1,
+            page_size: page_size,
+            bytes_allocated: 0,
+            bytes_total:page_size
+        };
+        return rst;
+    }
+
+    pub fn allocate(&mut self, size:usize)->*mut u8{
+        unsafe {
+            let page = &mut *self.page;
+            let mut rst = page.allocate(size);
             if std::ptr::null_mut() == rst {
-                let new_page_ptr = HeapPage::new_ptr(self.bytes_heap_page);
-                let new_ref = &mut *new_page_ptr;
-                new_ref.prev = self.current_page;
-                self.current_page = new_page_ptr;
-                rst = new_ref.allocate(size);
+                let new_page = Heap::create_page(self.page_size, self.page);
+                self.page = new_page;
+                rst = (&mut *self.page).allocate(size);
                 return rst;
             } else {
                 return rst;
             }
         }
-    }
-
-    pub fn bytes_total(&self)->usize {
-        return self.bytes_allcated;
     }
 }
