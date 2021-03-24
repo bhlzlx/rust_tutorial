@@ -1,4 +1,6 @@
-use std::alloc::*;
+/**
+ * Excel Heap implementation
+ */
 
 struct HeapPage {
     prev: *mut HeapPage,
@@ -31,7 +33,6 @@ pub struct Heap {
     page_count: usize,
     page_size:usize,
     bytes_allocated: usize,
-    bytes_total: usize,
 }
 
 impl Heap {
@@ -55,7 +56,6 @@ impl Heap {
             page_count:1,
             page_size: page_size,
             bytes_allocated: 0,
-            bytes_total:page_size
         };
         return rst;
     }
@@ -73,5 +73,13 @@ impl Heap {
                 return rst;
             }
         }
+    }
+
+    pub fn bytes_total(&self)->usize {
+        return self.page_count * self.page_size;
+    }
+
+    pub fn bytes_allocated(&self)->usize {
+        return self.bytes_allocated;
     }
 }
