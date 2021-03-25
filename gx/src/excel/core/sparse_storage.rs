@@ -18,6 +18,19 @@ impl MemoryChunk {
             return rst;
         }
     }
+    fn write_value<T>(&mut self, value: T )->bool {
+        unsafe {
+            let left = self.capacity - self.position;
+            if left < std::mem::size_of::<T>() {
+                return false;
+            } else {
+                let ptr = &self.buffer as *const u8 as *mut T;
+                *ptr = value;
+                self.position += std::mem::size_of::<T>();
+                return true;
+            }
+        }
+    }
 }
 
 struct ColumnStorage {
@@ -26,6 +39,7 @@ struct ColumnStorage {
 
 impl ColumnStorage {
     pub fn write<T>(value: T) {
+
     }
 }
 
